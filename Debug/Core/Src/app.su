@@ -1,0 +1,12 @@
+../Core/Src/app.c:39:6:update_curr_voa_info	32	static
+../Core/Src/app.c:60:6:number_pad_cb	16	static
+../Core/Src/app.c:102:6:set_atten_callback	16	static
+../Core/Src/app.c:113:6:check_atten_callback	16	static
+../Core/Src/app.c:124:6:touchscreen_transmit_cb	16	static
+../Core/Src/app.c:144:6:touchscreen_init	16	static
+../Core/Src/app.c:170:9:get_update_VOA	16	static
+../Core/Src/app.c:179:10:get_VOA_atten_arr	24	static
+../Core/Src/app.c:224:6:clear_voa_update_flag	24	static
+../Core/Src/app.c:229:6:unlockDevice	4	static
+../Core/Src/app.c:233:6:lockDevice	4	static
+../Core/Src/app.c:237:9:getDeviceLockStatus	4	static

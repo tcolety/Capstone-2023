@@ -1,0 +1,8 @@
+../Core/Src/number_pad.c:54:6:add_to_buffer	32	static
+../Core/Src/number_pad.c:111:6:number_pad_init	8	static
+../Core/Src/number_pad.c:123:6:reset_np_buffer	16	static
+../Core/Src/number_pad.c:131:6:reset_voa_setting_buff	4	static
+../Core/Src/number_pad.c:140:6:delete_num	24	static
+../Core/Src/number_pad.c:178:6:set_min_atten	8	static
+../Core/Src/number_pad.c:184:6:set_max_atten	8	static
+../Core/Src/number_pad.c:196:22:number_pad_read	24	static

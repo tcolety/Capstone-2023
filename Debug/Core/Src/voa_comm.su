@@ -1,0 +1,11 @@
+../Core/Src/voa_comm.c:61:13:MX_I2C1_Init	8	static
+../Core/Src/voa_comm.c:90:6:voa_comm_init	8	static
+../Core/Src/voa_comm.c:97:6:reset_buffer	16	static
+../Core/Src/voa_comm.c:104:6:init_voa	8	static
+../Core/Src/voa_comm.c:127:6:voa_busy	8	static
+../Core/Src/voa_comm.c:138:6:aardvark_callback	4	static
+../Core/Src/voa_comm.c:150:6:set_attenuation	24	static
+../Core/Src/voa_comm.c:168:7:query_attenuation	8	static
+../Core/Src/voa_comm.c:181:6:device_id	4	static
+../Core/Src/voa_comm.c:185:6:i2c_transmit	32	static
+../Core/Src/voa_comm.c:200:6:i2c_receive	48	static

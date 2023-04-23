@@ -1,0 +1,6 @@
+../Core/Src/gpio.c:42:6:HAL_GPIO_EXTI_Callback	16	static
+../Core/Src/gpio.c:66:13:MX_GPIO_Init	32	static
+../Core/Src/gpio.c:134:6:gpio_init	8	static
+../Core/Src/gpio.c:144:9:get_np_pressed	4	static
+../Core/Src/gpio.c:148:10:get_pin_pressed	4	static
+../Core/Src/gpio.c:152:6:reset_np_press	4	static

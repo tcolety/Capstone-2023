@@ -1,0 +1,4 @@
+../Core/Src/scheduler.c:39:6:scheduler_open	8	static
+../Core/Src/scheduler.c:50:6:add_scheduled_event	16	static
+../Core/Src/scheduler.c:61:6:remove_scheduled_event	16	static
+../Core/Src/scheduler.c:72:10:get_scheduled_events	4	static
