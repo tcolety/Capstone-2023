@@ -37,7 +37,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 UART_Packet touchscreenInputs;
-
+static void MX_NVIC_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 
@@ -59,6 +59,7 @@ int main(void)
   /* Initialize all configured peripherals */
   gpio_init();
   UART_init();
+  MX_NVIC_Init();
   scheduler_open();
   voa_comm_init();
   number_pad_init();
@@ -162,6 +163,16 @@ void SystemClock_Config(void)
   }
 }
 
+/**
+  * @brief NVIC Configuration.
+  * @retval None
+  */
+static void MX_NVIC_Init(void)
+{
+  /* USART2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(USART2_IRQn);
+}
 
 
 /* USER CODE BEGIN 4 */

@@ -51,6 +51,7 @@ static void MX_I2C1_Init(void);
 void i2c_receive(uint8_t address, uint8_t *data, uint8_t size);
 void i2c_transmit(uint8_t address, uint8_t *send_data, uint8_t size, uint8_t stop_true);
 void reset_buffer(void);
+uint8_t get_VOA_ADDR(uint16_t voaCH);
 
 
 /**
@@ -108,19 +109,19 @@ void init_voa(void) {
   //to_slave holds return of the master transmit
   i2c_data.send[0] = 0x8D;
   i2c_data.size = 1;
-  i2c_transmit(VOA_1_ADDR, i2c_data.send, i2c_data.size,STOP_FALSE);
+  i2c_transmit(VOA1_ADDR, i2c_data.send, i2c_data.size,STOP_FALSE);
 
   //Construct receive package (read)
   //to_slave holds return of the master transmit
   i2c_data.size = 3;
-  i2c_receive(VOA_1_ADDR, i2c_data.receive, i2c_data.size);
+  i2c_receive(VOA1_ADDR, i2c_data.receive, i2c_data.size);
 
   i2c_data.send[0] = 0;
 
   reset_buffer();
-  set_attenuation(5);
+  set_attenuation(1,5);
   query_attenuation();
-  set_attenuation(15);
+  set_attenuation(1,15);
     query_attenuation();
 }
 
@@ -147,9 +148,9 @@ void aardvark_callback(void){
 
 }
 
-void set_attenuation(float dB){
+void set_attenuation(uint16_t voaCH, float dB){
 	reset_buffer();
-	uint32_t value = (int)(dB * 100);
+	uint32_t value = (uint32_t)(dB * 100);
 	i2c_data.received = dB;
 	if(value & (0xFFFF0000)){
 		//out of range, tell touchscreen
@@ -161,7 +162,7 @@ void set_attenuation(float dB){
 	recent_atten = i2c_data.send[2];
 	i2c_data.size = 3;
 	setting_voa_check = set;
-	i2c_transmit(VOA_1_ADDR, i2c_data.send, i2c_data.size,STOP_TRUE);
+	i2c_transmit(get_VOA_ADDR(voaCH), i2c_data.send, i2c_data.size,STOP_TRUE);
 	return;
 }
 
@@ -170,9 +171,9 @@ float query_attenuation(void){
 	reset_buffer();
 	i2c_data.send[0] = 0x81;
 	i2c_data.size = 1;
-	i2c_transmit(VOA_1_ADDR, i2c_data.send, i2c_data.size,STOP_TRUE);
+	i2c_transmit(VOA1_ADDR, i2c_data.send, i2c_data.size,STOP_TRUE);
 	i2c_data.size = 2;
-	i2c_receive(VOA_1_ADDR, i2c_data.receive, i2c_data.size);
+	i2c_receive(VOA1_ADDR, i2c_data.receive, i2c_data.size);
 //	dB = (float)((i2c_data.receive[0] << 8) | i2c_data.receive[1]);
 //	dB = dB / 100.0;
 	return i2c_data.receive[1];
@@ -215,4 +216,25 @@ void i2c_receive(uint8_t address, uint8_t *data, uint8_t size){
 	for(int i=0; i<size; i++){
 		i2c_data.receive[i] = r_data[i];
 	}
+}
+
+uint8_t get_VOA_ADDR(uint16_t voaCH){
+	uint8_t addr;
+	switch(voaCH)
+	{
+		case VOA1_FLAG: addr=VOA1_ADDR; break;
+		case VOA2_FLAG: addr=VOA2_ADDR; break;
+		case VOA3_FLAG: addr=VOA3_ADDR; break;
+		case VOA4_FLAG: addr=VOA4_ADDR; break;
+		case VOA5_FLAG: addr=VOA5_ADDR; break;
+		case VOA6_FLAG: addr=VOA6_ADDR; break;
+		case VOA7_FLAG: addr=VOA7_ADDR; break;
+		case VOA8_FLAG: addr=VOA8_ADDR; break;
+		case VOA9_FLAG: addr=VOA9_ADDR; break;
+		case VOA10_FLAG: addr=VOA10_ADDR; break;
+		case VOA11_FLAG: addr=VOA11_ADDR; break;
+		case VOA12_FLAG: addr=VOA12_ADDR; break;
+		default: addr=0;
+	}
+	return addr;
 }

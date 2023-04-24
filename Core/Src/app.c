@@ -44,16 +44,14 @@ void update_curr_voa_info(void){
 		if(voa_selected & (1<<i)){
 			voa_value_arr = get_VOA_atten_arr(i+1);
 			curr_voa_info.arr_size[i] = np_buffer.index;
+			curr_voa_info.curr_atten[i] = atten_local;
 			for(int j=0; j<INPUT_NUM_LENGTH; j++){
 				voa_value_arr[j] = np_buffer.buff[j];
 			}
 		}
-		if(curr_voa_info.update_voa_atten & (1<<i)){
-			curr_voa_info.curr_atten[i] = atten_local;
-		}
 	}
 	clearVOA();
-//	curr_voa_info.update_voa_atten = curr_voa_info.update_voa_atten|voa_selected;
+	curr_voa_info.update_voa_atten = curr_voa_info.update_voa_atten|voa_selected;
 	curr_voa_info.update_display_atten = ALL_VOAS;
 }
 
@@ -100,14 +98,18 @@ void number_pad_cb(void){
 
 
 void set_atten_callback(void){
+	uint8_t check_atten = 0; //bool to tell if anymore voas need to be set; if not, then check atten
 	for(int i=0; i<NUM_OF_VOAS; i++){
 		if(curr_voa_info.update_voa_atten & (1<<i)){
-			set_attenuation(curr_voa_info.curr_atten[i]);
-//			curr_voa_info.update_voa_atten = curr_voa_info.update_voa_atten & !(1<<i);
-//			voa_query_request();
-			add_scheduled_event(CHECK_ATTEN_CB);
+			set_attenuation((1<<i), curr_voa_info.curr_atten[i]);
+			curr_voa_info.update_voa_atten = curr_voa_info.update_voa_atten & ~(1<<i);
+			check_atten=1;
+			add_scheduled_event(SET_ATTEN_CB);
+			break;
 		}
 	}
+	if(check_atten)	add_scheduled_event(CHECK_ATTEN_CB);
+
 }
 
 void check_atten_callback(void){
@@ -160,7 +162,7 @@ void touchscreen_init(void){
 		curr_voa_info.curr_atten[i] = 0;
 		curr_voa_info.arr_size[i] = 1;
 	}
-	curr_voa_info.update_voa_atten = 0b000000000001;
+	curr_voa_info.update_voa_atten = 0b000000000000;
 	curr_voa_info.update_display_atten = ALL_VOAS;
 	touchscreen_state = UPDATE_ALL_CH;
 	add_scheduled_event(TOUCHSCREEN_TRANSMIT_CB);
