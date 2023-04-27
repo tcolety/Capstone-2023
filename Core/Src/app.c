@@ -74,7 +74,7 @@ void number_pad_cb(void){
 			touchscreen_state = UPDATE_ALL_CH;
 			add_scheduled_event(TOUCHSCREEN_TRANSMIT_CB);
 			add_scheduled_event(SET_ATTEN_CB);
-			deselectVOA();
+//			selectAllVOA(0);   //dehighlights voas
 			break;
 		case delete:
 			delete_num();
@@ -166,6 +166,7 @@ void touchscreen_init(void){
 	curr_voa_info.update_display_atten = ALL_VOAS;
 	touchscreen_state = UPDATE_ALL_CH;
 	add_scheduled_event(TOUCHSCREEN_TRANSMIT_CB);
+//	add_scheduled_event(TOUCHSCREEN_SELECT_CB);
 	deviceLock = 0;
 }
 

@@ -25,15 +25,17 @@ uint32_t NextIndex;
 uint32_t PacketLength;
 long long touchscreenCMD;
 volatile UART_Packet Rx_Buffer;
-uint8_t Rx_data[20] = {0};
+volatile uint8_t Rx_data[RX_DATA_SIZE] = {0};
+uint8_t RxDataIndex;
+volatile uint8_t RxData_temp[RX_DATA_TEMP_SIZE] = {0};
 uint8_t TxData[100];
 uint8_t voaIndex = 0;
 uint8_t voaChannel = 0;
 uint8_t voaSelect[14];
-uint8_t voaSelected;	//voa ch to be selected or deselected
+uint16_t voaHighlighted;	//flags of which voa's highlight needs updating
 uint8_t highlight;	//bool if voaSelect is selected or deselected
 
-UART_HandleTypeDef huart2;
+volatile UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_rx;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -49,6 +51,8 @@ static void MX_DMA_Init(void);
 void UART_Init(void);
 void clearTxData(void);
 void removeVOA(uint8_t voa);
+void clearRxData(void);
+void clearRxDataTemp(void);
 
 
 /**
@@ -61,8 +65,9 @@ void removeVOA(uint8_t voa);
 
 void uart_receive_init(void){
 //	uint8_t ReceiveData[20];
-	HAL_UART_Receive_DMA(&huart2,Rx_data,15);
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart2, RxData_temp, RX_DATA_TEMP_SIZE);
 }
+
 
 void parseTouchIn(UART_Packet tsPacket)
 {
@@ -105,39 +110,39 @@ void parseTouchIn(UART_Packet tsPacket)
 
 
 	// Channels 1 - 9
-	else if(tsPacket.Data[1]== '1')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '1')
 	{
 		voaChannel = 1;
 	}
-	else if(tsPacket.Data[1]== '2')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '2')
 	{
 		voaChannel = 2;
 	}
-	else if(tsPacket.Data[1]== '3')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '3')
 	{
 		voaChannel = 3;
 	}
-	else if(tsPacket.Data[1]== '4')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '4')
 	{
 		voaChannel = 4;
 	}
-	else if(tsPacket.Data[1]== '5')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '5')
 	{
 		voaChannel = 5;
 	}
-	else if(tsPacket.Data[1]== '6')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '6')
 	{
 		voaChannel = 6;
 	}
-	else if(tsPacket.Data[1]== '7')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '7')
 	{
 		voaChannel = 7;
 	}
-	else if(tsPacket.Data[1]== '8')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '8')
 	{
 		voaChannel = 8;
 	}
-	else if(tsPacket.Data[1]== '9')
+	else if(tsPacket.Data[1]== '0' && tsPacket.Data[2]== '9')
 	{
 		voaChannel = 9;
 	}
@@ -155,6 +160,7 @@ void parseTouchIn(UART_Packet tsPacket)
 		unlockDevice();
 	}
 }
+
 
 uint16_t getVOA(void)
 {
@@ -203,6 +209,8 @@ void addChannel(uint8_t voaCH)
 			voaSelect[i] = (uint8_t)i+1;
 		}
 		voaIndex = 13;
+		voaHighlighted = 0b111111111111;
+		highlight = 1;
 	}
 	else if(voaCH == 14) // DE SELECT ALL
 	{
@@ -211,6 +219,8 @@ void addChannel(uint8_t voaCH)
 			voaSelect[i] = 0;
 		}
 		voaIndex = 0;
+		highlight = 0;
+		voaHighlighted = 0b111111111111;
 	}
 	else
 	{
@@ -233,10 +243,10 @@ void addChannel(uint8_t voaCH)
 			voaSelect[voaIndex] = voaCH; // Add channel to global voaSelect Array
 			voaIndex++;
 		}
-		voaSelected = voaCH;
-		add_scheduled_event(TOUCHSCREEN_SELECT_CB);
+		voaHighlighted = (1<<(voaCH-1));
 		//select VOA call
 	}
+	add_scheduled_event(TOUCHSCREEN_SELECT_CB);
 }
 
 void removeVOA(uint8_t voa)
@@ -262,11 +272,19 @@ void clearVOA(void)
 	voaIndex = 0;
 }
 
+void clearRxDataTemp(void){
+	for(int i = 0; i < RX_DATA_TEMP_SIZE; i++)
+	{
+		RxData_temp[i] = 0;
+	}
+}
+
 void clearRxData(void){
-	for(int i = 0; i < 20; i++)
+	for(int i = 0; i < RX_DATA_SIZE; i++)
 	{
 		Rx_data[i] = 0;
 	}
+	RxDataIndex = 0;
 }
 
 void clearTxData(void){
@@ -337,7 +355,10 @@ void UART_init(void)
 	MX_DMA_Init();
 	MX_USART2_UART_Init();
 	clearVOA();
-	deselectVOA();
+	RxDataIndex = 0;
+	highlight = 0;
+	voaSelected = 0b111111111111;
+//	selectAllVOA(0);
 
 //	__HAL_UART_CLEAR_OREFLAG(&huart2);
 //	__HAL_UART_CLEAR_NEFLAG(&huart2);
@@ -394,14 +415,27 @@ static void MX_DMA_Init(void)
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 
 }
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart2){
-	if(huart2->Instance == USART2)
-	{
-		HAL_UART_Receive_DMA(&huart2,Rx_data, 15);
-		add_scheduled_event(TOUCHSCREEN_RECEIVE_CB);
-	}
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
+	uint8_t index =RxDataIndex;
+    if(huart->Instance == USART2) //check rx event
+    {
+//        HAL_UART_Receive_DMA(&huart2,Rx_data, 16);
+//        HAL_UARTEx_ReceiveToIdle_DMA(&huart, Rx_data, 50);
+//        huart2->Instance->CR1 |= USART_CR1_RXNEIE;
+    	for(int i=0; i<Size; i++)
+		{
+			Rx_data[index] = RxData_temp[i];
+			index++;
+		}
+    	RxDataIndex = index;
+        add_scheduled_event(TOUCHSCREEN_RECEIVE_CB);
+    }
 }
+
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart){
+	add_scheduled_event(TOUCHSCREEN_RECEIVE_CB);
+}
+
 
 /**
   * @brief Sends a packet to touch screen after number pad pressed
@@ -619,24 +653,16 @@ void update_display_channel(uint8_t VOA, uint8_t* atten, uint8_t size)
 		}
 
 	// Switch Statements to update widgit (VOA channnel)
-	if(VOA == 1) widgit[2] =  0x31;   // "vl1";
-	else if(VOA == 2) widgit[2] = 0x32;   // "vl2";
-	else if(VOA == 3) widgit[2] = 0x33;   // "vl3";
-	else if(VOA == 4) widgit[2] = 0x34;   // "vl4";
-	else if(VOA == 5) widgit[2] = 0x35;   // "vl5";
-	else if(VOA == 6) widgit[2] = 0x36;  // "vl6";
-	else if(VOA == 7) widgit[2] = 0x37;   // "vl7";
-	else if(VOA == 8) widgit[2] = 0x38;   // "vl8";
-	else if(VOA == 9) widgit[2] = 0x39;   // "vl9";
-	else if(VOA == 10) widgitTens[3] = 0x30;   // "vl10";
-	else if(VOA == 11) widgitTens[3] = 0x31;  // "vl11";
-	else if(VOA == 12) widgitTens[3] = 0x32;   // "vl12";
-	else if(VOA == INPUT_FIELD_T)
+	if(VOA == INPUT_FIELD_T)
 	{
 		widgit[0] = 0x69; // "in1"
 		widgit[1] = 0x6E;
 		widgit[2] = 0x31;
 	}
+	else if(VOA < 10)widgit[2] = 0x30 + VOA;
+	else if(VOA == 10) widgitTens[3] = 0x30;   // "vl10";
+	else if(VOA == 11) widgitTens[3] = 0x31;  // "vl11";
+	else if(VOA == 12) widgitTens[3] = 0x32;   // "vl12";
 
 	if(VOA < 10)touchscreen_update(cmdCode,type, widgit, value, valArrSize,0);
 	else touchscreen_update(cmdCode,type, widgitTens, value, valArrSize,0);
@@ -672,14 +698,15 @@ void np_to_touchscreen(void){
 }
 
 void touchscreen_receive_callback(void){
+	clearRxDataTemp();
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart2, RxData_temp, RX_DATA_TEMP_SIZE);
 	touchscreenInputs = parseUART();
 	parseTouchIn(touchscreenInputs);
-
+	clearRxData();
 	/* 1) Clear Rx_data
 	 * 2) Parse touchscreenInputs
 	 * 3) Set global Variables for CMD code ex..
 	 */
-	 clearRxData();
 }
 
 void lockTouchscreen(void)
@@ -692,7 +719,7 @@ void lockTouchscreen(void)
 }
 
 void selectChannel(void){
-	uint8_t voaChannel = voaSelected;
+	uint8_t voaChannel;
 	uint8_t selected = highlight;
 	uint8_t cmdCode[] = {0x73, 0x65, 0x74,0x5F, 0x76, 0x61, 0x6C, 0x75, 0x65, 0x22}; //set_value
 	uint8_t type[] = {0x70, 0x72, 0x6F, 0x67, 0x72, 0x65, 0x73, 0x73, 0x5F, 0x62, 0x61, 0x72, 0x22}; //progress_bar
@@ -704,6 +731,16 @@ void selectChannel(void){
 	// toggle touchscreen update to remove label setting
 	uint8_t toggle = 1;
 	// Channels 1 - 9
+
+	for(int i=0; i<NUM_OF_VOAS; i++)
+	{
+		if(voaHighlighted & (1<<i))
+		{
+			voaChannel = i+1;
+			voaHighlighted = voaHighlighted & ~(1<<i);
+			break;
+		}
+	}
 
 	if(voaChannel == 1) widgit[1] = 0x31;
 	if(voaChannel == 2) widgit[1] = 0x32;
@@ -729,14 +766,16 @@ void selectChannel(void){
 		if(!selected) touchscreen_update(cmdCode,type,widgitTens,value,1,toggle);
 		else touchscreen_update(cmdCode,type,widgitTens,valueHundred,3,toggle);
 	}
-}
 
-void deselectVOA(void)
-{
-	for(int i=0; i<NUM_OF_VOAS; i++)
-	{
-		voaSelected = i+1;
-		highlight = 0;
-		selectChannel();
-	}
+	if(voaHighlighted != 0) add_scheduled_event(TOUCHSCREEN_SELECT_CB);
 }
+//
+//void selectAllVOA(uint8_t highlight)
+//{
+//	for(int i=0; i<NUM_OF_VOAS; i++)
+//	{
+//		voaSelected = i+1;
+//		highlight = highlight;
+//		selectChannel();
+//	}
+//}

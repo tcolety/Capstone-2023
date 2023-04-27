@@ -124,17 +124,17 @@ void init_voa(void) {
   set_attenuation(1,15);
     query_attenuation();
 }
-
-void voa_busy(void){
-	if(setting_voa_check == set){
-		setting_voa_check = flagged;
-	} else if (setting_voa_check == flagged){
-		setting_voa_check = done;
-	} else if(setting_voa_check == done){
-		setting_voa_check = aardvark_started;
-		add_scheduled_event(AARDVARK_CB);
-	}
-}
+//
+//void voa_busy(void){
+//	if(setting_voa_check == set){
+//		setting_voa_check = flagged;
+//	} else if (setting_voa_check == flagged){
+//		setting_voa_check = done;
+//	} else if(setting_voa_check == done){
+//		setting_voa_check = aardvark_started;
+//		add_scheduled_event(AARDVARK_CB);
+//	}
+//}
 
 void aardvark_callback(void){
 	//disable all i2c and cancel all comm
@@ -238,3 +238,21 @@ uint8_t get_VOA_ADDR(uint16_t voaCH){
 	}
 	return addr;
 }
+
+/**
+  * @brief I2C1 checking busy line
+  * @param None
+  * @retval bool high if i2c line is busy
+  */
+uint8_t checkI2CBusBusy(void)
+{
+//	HAL_StatusTypeDef busyStatus = I2C_WaitOnFlagUntilTimeout(&hi2c1, I2C_FLAG_BUSY, SET, 1, tickstart);
+	FlagStatus StatusBusy = __HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_BUSY);
+	if(StatusBusy == HAL_OK) return 0;
+	else
+	{
+		add_scheduled_event(AARDVARK_CB);
+		return 1;
+	}
+}
+

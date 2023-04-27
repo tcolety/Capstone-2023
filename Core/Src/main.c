@@ -48,6 +48,7 @@ static void MX_NVIC_Init(void);
   */
 int main(void)
 {
+	uint8_t i2cBusy = 0;
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -59,7 +60,7 @@ int main(void)
   /* Initialize all configured peripherals */
   gpio_init();
   UART_init();
-  MX_NVIC_Init();
+//  MX_NVIC_Init();
   scheduler_open();
   voa_comm_init();
   number_pad_init();
@@ -71,7 +72,8 @@ int main(void)
   /* Infinite loop */
   while (1)
   {
-	  while(get_scheduled_events() != 0){
+//	  i2cBusy = checkI2CBusBusy();
+	  while((get_scheduled_events() != 0)|(i2cBusy == 1)){
 		  if(get_scheduled_events() & AARDVARK_CB){
 			remove_scheduled_event(AARDVARK_CB);
 			lockTouchscreen();
@@ -163,16 +165,16 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief NVIC Configuration.
-  * @retval None
-  */
-static void MX_NVIC_Init(void)
-{
-  /* USART2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(USART2_IRQn);
-}
+///**
+//  * @brief NVIC Configuration.
+//  * @retval None
+//  */
+//static void MX_NVIC_Init(void)
+//{
+//  /* USART2_IRQn interrupt configuration */
+//  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+//  HAL_NVIC_EnableIRQ(USART2_IRQn);
+//}
 
 
 /* USER CODE BEGIN 4 */

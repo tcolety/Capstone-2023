@@ -15,7 +15,8 @@ Author: tcole
 
 
 // Defines the Frame tail and header for MCU->Touchscreen communication
-
+#define RX_DATA_SIZE				80
+#define RX_DATA_TEMP_SIZE			20
 
 void UART_init(void);
 void np_to_touchscreen(void);
@@ -36,14 +37,13 @@ extern UART_Packet touchscreenInputs; // global Variable for the inputs to the t
 
 extern uint8_t TxData[100];
 extern volatile UART_Packet Rx_Buffer;
-extern UART_HandleTypeDef huart2;
+//extern volatile UART_HandleTypeDef huart2;
 extern uint8_t voaSelect[14];
 
 
 UART_Packet parseUART(void);
 void UART_Init(void);
 void uart_receive_init(void);
-void clearRxData(void);
 void parseTouchIn(UART_Packet tsPacket);
 void addChannel(uint8_t voaCH);
 void clearVOA(void);
@@ -54,6 +54,6 @@ void lockTouchscreen(void);
 void removeVOA(uint8_t voa);
 uint8_t isIn(uint8_t voaNum);
 void selectChannel(void);
-void deselectVOA(void);
+void selectAllVOA(uint8_t highlight);
 
 #endif /* SRC_UARTH */
